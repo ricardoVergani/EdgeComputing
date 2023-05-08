@@ -46,5 +46,6 @@ Este projeto consiste em uma solução de hardware e software para a detecção 
 
 ## Link para Repositório GitHub
 
+https://github.com/ricardoVergani/EdgeComputing
 
 
