@@ -1,0 +1,209 @@
+# include <LiquidCrystal.h>
+
+int ldr = A5;
+
+const int dht11 = A0;
+int humiditysensorOutput = 0;
+// Defining Variables;
+int RawValue= 0;
+double Voltage = 0;
+double tempC = 0;
+double tempF = 0;
+
+LiquidCrystal lcd(9,8,7,6,5,4,3);
+
+int buzzer = 13;
+
+int greenLed = 12;
+int yellowLed = 11;
+int redLed = 10;
+
+
+
+unsigned long previousMillis = 0;
+unsigned long previousMillis2 = 0;
+
+
+int contador = 0;
+double mediaT = 0;
+double mediaU = 0;
+double tempFinal = 0;
+double umidadeFinal = 0;
+
+
+void setup(){  
+  Serial.begin(9600);
+  pinMode(A5, INPUT);
+  pinMode(A1, INPUT);
+  pinMode(13, OUTPUT);
+  pinMode(greenLed, OUTPUT);
+  pinMode(yellowLed, OUTPUT);
+  pinMode(redLed, OUTPUT);
+  
+  lcd.begin(16,2);
+  lcd.clear();
+}
+
+void loop(){
+  int leituraLdr = analogRead(ldr);
+  
+  humiditysensorOutput = analogRead(A1);
+  int umidade = map(humiditysensorOutput, 0, 1023, 10, 100);
+  
+  RawValue = analogRead(dht11);
+  Voltage = (RawValue / 1023.0) * 5000;
+  tempC = (Voltage-500) * 0.1;
+  
+
+
+  unsigned long currentMillis = millis();
+
+ 
+  
+  if(currentMillis - previousMillis >= 1000){
+  	previousMillis = currentMillis;
+    Serial.print("Raw Value = ");
+  	Serial.println(RawValue);
+  	Serial.print("Temperature in C = ");
+  	Serial.println(tempC, 1);
+  	Serial.print("Humidity = ");
+    Serial.println(umidade, 1);
+    Serial.print("LDR: ");
+    Serial.println(leituraLdr);
+    contador = contador + 1;
+    tempFinal = tempFinal + tempC;
+    umidadeFinal = umidadeFinal + umidade;
+    if(currentMillis - previousMillis2 >= 5000){
+      previousMillis2 = currentMillis;
+      mediaT = tempFinal / contador;
+  	  mediaU = umidadeFinal / contador;
+    }
+  }
+  	
+    
+  	alterar_temp();
+    delay(5000);
+    lcd.clear();
+  	alterar_umidade();
+  	delay(5000);
+  	lcd.clear();
+  	alterar_ldr();
+  	delay(5000);
+ 	lcd.clear();
+  
+  
+  
+  }
+    
+
+
+  
+
+ 
+
+
+void alterar_temp(){
+  RawValue = analogRead(dht11);
+  Voltage = (RawValue / 1023.0) * 5000;
+  tempC = (Voltage-500) * 0.1;
+  //Condicional temperatura
+  if(tempC >= 10 && tempC <= 15){
+    digitalWrite(yellowLed, LOW);
+    noTone(13);
+    lcd.setCursor(1, 0);
+    lcd.print("Temperatura OK");
+    lcd.setCursor(0, 1);
+    lcd.print("Temp. = ");
+    lcd.print(mediaT);
+    lcd.print("C"); 
+  }else if(tempC > 15){
+    digitalWrite(yellowLed, HIGH);
+    tone(13, 1500);
+    lcd.setCursor(0, 0);
+    lcd.print("Temp. Alta");
+    lcd.setCursor(0, 1);
+    lcd.print("Temp. = ");
+    lcd.print(mediaT);
+    lcd.print("C"); 
+  }else{
+    digitalWrite(yellowLed, HIGH);
+    tone(13,1500);
+    lcd.setCursor(0, 0);
+    lcd.print("Temp. Baixa ");
+    lcd.setCursor(0, 1);
+    lcd.print("Temp. = ");
+    lcd.print(mediaT);
+    lcd.print("C");
+  }
+}
+  
+  void alterar_umidade(){
+   humiditysensorOutput = analogRead(A1);
+   int umidade = map(humiditysensorOutput, 0, 1023, 10, 100);
+    //Condicional umidade           
+   if(umidade >= 50 && umidade <= 70){
+     digitalWrite(redLed, LOW);
+     noTone(13);
+     lcd.setCursor(0, 0);
+     lcd.print("Umidade OK");
+     lcd.setCursor(0, 1);
+     lcd.print("Umidade = ");
+     lcd.print(mediaU);
+     lcd.print("%");
+     delay(5000);
+     lcd.clear();
+   }else if(umidade > 70){
+     digitalWrite(redLed, HIGH);
+     tone(13, 500);
+     lcd.setCursor(0, 0);
+     lcd.print("Umidade Alta");
+     lcd.setCursor(0, 1);
+     lcd.print("Umidade = ");
+     lcd.print(mediaU);
+     lcd.print("%");
+     delay(5000);
+     lcd.clear();
+    
+   }else{
+     digitalWrite(redLed, HIGH);
+     tone(13, 500);
+     lcd.setCursor(0, 0);
+     lcd.print("Umidade Baixa");
+     lcd.setCursor(0, 1);
+     lcd.print("Umidade = ");
+     lcd.print(mediaU);
+     lcd.print("%");
+     delay(5000);
+     lcd.clear();
+    
+  	}
+  }
+
+
+void alterar_ldr(){
+  int leituraLdr = analogRead(ldr);
+  if(leituraLdr < 420){
+    digitalWrite(greenLed,HIGH);
+    digitalWrite(yellowLed,LOW);
+    digitalWrite(redLed,LOW);
+  }
+  else if(leituraLdr >= 420 && leituraLdr < 550){
+    digitalWrite(greenLed,LOW);
+    digitalWrite(yellowLed,HIGH);
+    digitalWrite(redLed,LOW);
+    lcd.setCursor(0,0);
+    lcd.print("Ambiente a meia");
+    lcd.setCursor(0,1);
+    lcd.print("luz");
+  }
+  else{
+    digitalWrite(greenLed,LOW);
+    digitalWrite(yellowLed,LOW);
+    digitalWrite(redLed,HIGH);
+    lcd.setCursor(0,0);
+    lcd.print("Ambiente muito");
+    lcd.setCursor(0,1);
+    lcd.print("CLARO");
+    tone(13,2000);
+  }
+}
